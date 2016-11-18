@@ -19,7 +19,35 @@ library(broom)
 library(purrr)
 library(dplyr)
 
-nullmodel <- lmer(score ~ (1 | schoolid), data = mydata, REML = FALSE)
+nullmodel <- lmer(
+  score ~ (1 | schoolid), # varying intercept with no predictors
+     data = mydata, REML = FALSE)
+
+display(nullmodel)
+
+coef(nullmodel) %>% str # imamo samo jedan koeficijent...
+
+coef(nullmodel)$schoolid %>% head(20) # ...a to je intercept
+
+fixef(nullmodel)[["(Intercept)"]] # to je prva vrijednost iz display()-a
+
+ranef(nullmodel)$schoolid[["(Intercept)"]] %>% head
+
+fixef(nullmodel)[["(Intercept)"]] + ranef(nullmodel)$schoolid[["(Intercept)"]] %>% 
+  head # COEF! YEAH!
+
+coef(nullmodel)$schoolid[["(Intercept)"]] %>% mean
+
+augment(nullmodel) %>% as_data_frame()
+
+
+
+
+
+# gelman 12.4 : quickly fitting multilevel models
+lmer(1 + score ~ (1 | schoolid), # konstanta je (po novom) default, tako da je 1 + ... nepotrebno
+     data = mydata, REML = FALSE) %>% 
+  display()
 
 summary(nullmodel)
 display(nullmodel)
@@ -28,6 +56,8 @@ display(nullmodel)
 fit <- lm(score ~ 1, data = mydata)
 
 display(fit)
+
+
 
 
 # logLik is most commonly used for a model fitted by maximum likelihood,
@@ -70,10 +100,18 @@ niz %>%
 lmer(score ~ (1 | schoolid), data = mydata, REML = FALSE) %>% 
   augment() %>% 
   as_data_frame() %>% 
-  select(starts_with("."))
+  select(starts_with(".")) %>% 
+  unique()
 
 
 # P5.1.2 Examining school effects (residuals)
+
+coef(nullmodel)
+
+fixef(nullmodel)[["(Intercept)"]]
+ranef(nullmodel, condVar = TRUE)$schoolid[["(Intercept)"]]
+
+ranef(nullmodel, condVar = TRUE) %>% as_data_frame()
 
 u0 <- ranef(nullmodel, condVar = TRUE) # used to be postVar
 # extract the conditional modes of the random effects from a fitted model object.
@@ -81,6 +119,7 @@ u0 <- ranef(nullmodel, condVar = TRUE) # used to be postVar
 # conditional means
 
 lattice::dotplot(u0) # caterpillar plot nabrzaka
+
 
 # If condVar is TRUE the "postVar" attribute is an array of dimension j by j by k.
 
